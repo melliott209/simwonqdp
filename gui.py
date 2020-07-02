@@ -56,16 +56,18 @@ ini_parts.close()
 # Create window
 window = tk.Tk()
 window.title("Simwon QDP")
+window.iconphoto(False, tk.PhotoImage(file='SimwonAmerica-Logo2.png'))
 window.resizable(False,False)
+window.grid_columnconfigure(0,weight=1)
 
 ## Create Tab holder
 tabCtl = ttk.Notebook(window)
+tabCtl.grid_columnconfigure(0,weight=1)
 
 ## Create tabs
 tabAdd = tk.Frame(tabCtl,padx=DEFAULT_PADDING,pady=DEFAULT_PADDING)
 tabEdit = tk.Frame(tabCtl,padx=DEFAULT_PADDING,pady=DEFAULT_PADDING)
 tabEdit.grid_columnconfigure(0,weight=1)
-tabEdit.grid_columnconfigure(1,weight=1)
 
 ### Add functionality to "Add Entry" Tab
 
@@ -133,22 +135,26 @@ account.grid(row=3,column=1)
 tabCtl.add(tabAdd, text="Add Entry")
 
 ### Add functionality to "Process CMM" tab
-inputLabel = tk.Label(tabEdit,text="Input Files",relief=tk.GROOVE)
-outputLabel = tk.Label(tabEdit,text="Output Options",relief=tk.GROOVE)
-inputFrame = tk.Frame(tabEdit,relief=tk.GROOVE,borderwidth=1)
+inputLabel = tk.Label(tabEdit,text="Input Files",relief=tk.GROOVE,pady=5)
+outputLabel = tk.Label(tabEdit,text="Output Options",relief=tk.GROOVE,pady=5)
+inputFrame = tk.Frame(tabEdit,relief=tk.GROOVE,borderwidth=1,pady=5)
 inputFrame.grid_columnconfigure(0,weight=1)
 inputFrame.grid_columnconfigure(1,weight=1)
-outputFrame = tk.Frame(tabEdit,relief=tk.GROOVE,borderwidth=1)
+outputFrame = tk.Frame(tabEdit,relief=tk.GROOVE,borderwidth=1,pady=5)
 outputFrame.grid_columnconfigure(0,weight=1)
-outputFrame.grid_columnconfigure(1,weight=2)
+outputFrame.grid_columnconfigure(1,weight=1)
 fileLabel1 = tk.Entry(inputFrame,relief=tk.GROOVE)
 fileLabel2 = tk.Entry(inputFrame,relief=tk.GROOVE)
 fileLabel3 = tk.Entry(inputFrame,relief=tk.GROOVE)
 saveDirLabel = tk.Entry(outputFrame,relief=tk.GROOVE)
-fileBtn1 = tk.Button(inputFrame,text="Choose File",command=lambda: chooseFile(fileLabel1))    # Have to pass lambda in order to pass args
-fileBtn2 = tk.Button(inputFrame,text="Choose File",command=lambda: chooseFile(fileLabel2))
-fileBtn3 = tk.Button(inputFrame,text="Choose File",command=lambda: chooseFile(fileLabel3))
-saveDirBtn = tk.Button(outputFrame,text="Choose Directory",command=lambda: chooseDir(saveDirLabel))
+fileBtn1 = tk.Button(inputFrame,text="Choose File...",command=lambda: chooseFile(fileLabel1))    # Have to pass lambda in order to pass args
+fileBtn2 = tk.Button(inputFrame,text="Choose File...",command=lambda: chooseFile(fileLabel2))
+fileBtn3 = tk.Button(inputFrame,text="Choose File...",command=lambda: chooseFile(fileLabel3))
+saveDirBtn = tk.Button(outputFrame,text="Choose Directory...",command=lambda: chooseDir(saveDirLabel))
+sampleQtyLabel = tk.Label(outputFrame,text="Sample Quantity",relief=tk.GROOVE,pady=5)
+sampleQtyEntry = tk.Spinbox(outputFrame,from_=0,to=100)
+genBtn = tk.Button(outputFrame,text="Generate Samples",padx=10,pady=5)
+
 fileLabel1.grid(row=0,column=1,sticky='nsew')
 fileLabel2.grid(row=1,column=1,sticky='nsew')
 fileLabel3.grid(row=2,column=1,sticky='nsew')
@@ -157,10 +163,14 @@ fileBtn2.grid(row=1,column=0,sticky='ew')
 fileBtn3.grid(row=2,column=0,sticky='ew')
 saveDirBtn.grid(row=0,column=0,sticky='ew')
 saveDirLabel.grid(row=0,column=1,sticky='nsew')
-inputLabel.grid(row=0,column=0,sticky='ew')
-outputLabel.grid(row=0,column=1,sticky='ew')
-inputFrame.grid(row=1,column=0,sticky='ew')
-outputFrame.grid(row=1,column=1,sticky="new")
+sampleQtyLabel.grid(row=1,column=0,sticky='ew')
+sampleQtyEntry.grid(row=1,column=1,sticky='nsew')
+genBtn.grid(row=2,column=0,columnspan=2)
+inputLabel.grid(row=0,column=0,sticky='nsew')
+outputLabel.grid(row=2,column=0,sticky='nsew')
+
+inputFrame.grid(row=1,column=0,sticky='nsew')
+outputFrame.grid(row=3,column=0,sticky="nsew")
 
 ### Finalize "Process CMM" tab
 tabCtl.add(tabEdit, text="Process CMM")
