@@ -4,15 +4,19 @@ from tkinter import filedialog
 from tkinter import messagebox
 import tkcalendar
 import openpyxl as xl
+import datetime
 import data
 
-# CONSTANTS
+#============================================================
+# Constants
+#============================================================
+
 WIDGET_WIDTH = 15
 FILE_LABEL_DEFAULT = "None Chosen"
 DEFAULT_PADDING = 5
 
 #============================================================
-# Define Functions
+# Functions
 #============================================================
 
 # Reads line from INI file and returns a list
@@ -33,6 +37,46 @@ def chooseDir(label):
     label.insert(0,dirName)
     return
 
+def partNameCallback(partsList,partNoList,selected,label):
+    print("event generated!")
+    if selected == '':
+        return
+    label.config(text=partNoList[partsList.index(selected)])
+
+def dateCallback(julianLabel,date):
+    eoy = datetime.date(2019,12,31)
+    delta = (date - eoy).days
+    julianLabel.config(text=str(delta))
+
+# Loads an excel file from a directory and adds data to the list of parts(samples)
+def loadDataPoint(direct, samples):
+    if direct != '':
+        wb = xl.load_workbook(direct)
+        ws = wb.active
+        samples.append(data.Part())
+        rowlist = list()
+        for row in ws.iter_rows(1,ws.max_row):
+            for cell in row:
+                if cell.value == 'Name':
+                    rowlist.append(cell.row)
+        for row in rowlist:
+            cell = ws.cell(row+1,1)
+            while cell.value is not None:
+                samples[len(samples)-1].addData(cell.value,
+                                                cell.offset(0,1).value,
+                                                cell.offset(0,2).value,
+                                                cell.offset(0,3).value,
+                                                cell.offset(0,4).value,
+                                                cell.offset(0,5).value)
+                cell = cell.offset(row=1,column=0)
+
+# Loads data from directories given using loadDataPoint()
+def loadData(dir1, dir2, dir3, samples):
+    loadDataPoint(dir1, samples)
+    loadDataPoint(dir2, samples)
+    loadDataPoint(dir3, samples)
+
+# Main command for Generate Samples button on GUI
 def processCMM(dir1, dir2, dir3, numSamples, outDir):
     if dir1 == '' and dir2 == '' and dir3 == '':
         tk.messagebox.showerror(title='Error',message='No input files chosen!')
@@ -40,26 +84,12 @@ def processCMM(dir1, dir2, dir3, numSamples, outDir):
     if outDir == '':
         messagebox.showerror(title='Error',message='No output directory chosen!')
         return
-    wb1 = xl.load_workbook(dir1)
-    ws1 = wb1.active
-    Sample1 = data.Part()
-    rowlist = []
-    for row in ws1.iter_rows(1,ws1.max_row):
-        for cell in row:
-            if cell.value == 'Name':
-                rowlist.append(cell.row)
-    for row in rowlist:
-        cell = ws1.cell(row+1,1)
-        while cell.value is not None:
-            Sample1.addData(cell.value,
-                            cell.offset(0,1).value,
-                            cell.offset(0,2).value,
-                            cell.offset(0,3).value,
-                            cell.offset(0,4).value,
-                            cell.offset(0,5).value)
-            cell = cell.offset(row=1,column=0)
-    for i in Sample1.getData():
-        print(i.getLabel() + ' ' + i.getControl() + ' ' + str(i.getNom()) + ' ' + str(i.getMeas()) + ' ' + str(i.getTol()) + ' ' + str(i.getDev()))
+
+    Samples = list()
+    loadData(dir1,dir2,dir3,Samples)
+
+    for sample in Samples:
+        print(sample.getCSV())
 
 #============================================================
 # Load and Process Input Files
@@ -100,7 +130,9 @@ tabAdd = tk.Frame(tabCtl,padx=DEFAULT_PADDING,pady=DEFAULT_PADDING)
 tabEdit = tk.Frame(tabCtl,padx=DEFAULT_PADDING,pady=DEFAULT_PADDING)
 tabEdit.grid_columnconfigure(0,weight=1)
 
-### Add functionality to "Add Entry" Tab
+#============================================================
+# Add Entry Tab
+#============================================================
 
 #### Add "General" Container
 generalLabel = tk.Label(tabAdd,text="General",relief=tk.GROOVE)
@@ -165,7 +197,10 @@ account.grid(row=3,column=1)
 ### Finalize "Add Entry" tab
 tabCtl.add(tabAdd, text="Record Defect")
 
-### Add functionality to "Process CMM" tab
+#============================================================
+# Process CMM Tab
+#============================================================
+
 inputLabel = tk.Label(tabEdit,text="Input Files",relief=tk.GROOVE,pady=5)
 outputLabel = tk.Label(tabEdit,text="Output Options",relief=tk.GROOVE,pady=5)
 inputFrame = tk.Frame(tabEdit,relief=tk.GROOVE,borderwidth=1,pady=5)
@@ -184,6 +219,22 @@ fileBtn3 = tk.Button(inputFrame,text="Choose File...",command=lambda: chooseFile
 saveDirBtn = tk.Button(outputFrame,text="Choose Directory...",command=lambda: chooseDir(saveDirLabel))
 sampleQtyLabel = tk.Label(outputFrame,text="Sample Quantity",relief=tk.GROOVE,pady=5)
 sampleQtyEntry = tk.Spinbox(outputFrame,from_=0,to=100)
+partNameLab = tk.Label(outputFrame,text="Part Name",relief=tk.GROOVE,pady=5)
+partNameEnt = ttk.Combobox(outputFrame,values=parts,state="readonly")
+partNoLab = tk.Label(outputFrame,text="Part Number",relief=tk.GROOVE,pady=5)
+partNoEnt = tk.Label(outputFrame,text="--",relief=tk.GROOVE)
+dateLab = tk.Label(outputFrame,text="Date",relief=tk.GROOVE,pady=5)
+dateEnt = tkcalendar.DateEntry(outputFrame,locale='en_US')
+partNameEnt.bind("<<ComboboxSelected>>",lambda event:partNameCallback(parts,partnos,partNameEnt.get(),partNoEnt))
+julianDateLabel = tk.Label(outputFrame,text="Julian Date Code",relief=tk.GROOVE,pady=5)
+julianDateEntry = tk.Label(outputFrame,text="--",relief=tk.GROOVE,pady=5)
+dateEnt.bind("<<DateEntrySelected>>",lambda event:dateCallback(julianDateEntry,dateEnt.get_date()))
+timeLabel = tk.Label(outputFrame,text="Time (e.g. 1430 => 2:30 PM)",relief=tk.GROOVE,pady=5)
+timeEntry = tk.Entry(outputFrame,relief=tk.GROOVE)
+supplierLab = tk.Label(outputFrame,text="Supplier",relief=tk.GROOVE,pady=5)
+supplierEnt = tk.Label(outputFrame,text="MS Auto",relief=tk.GROOVE,pady=5)
+supCodeLabel = tk.Label(outputFrame,text="Supplier Code",relief=tk.GROOVE,pady=5)
+supCodeEntry = tk.Label(outputFrame,text="131307",relief=tk.GROOVE,pady=5)
 genBtn = tk.Button(outputFrame,text="Generate Samples",padx=10,pady=5,command=lambda: processCMM(fileLabel1.get(),fileLabel2.get(),fileLabel3.get(),sampleQtyEntry.get(),saveDirLabel.get()))
 
 fileLabel1.grid(row=0,column=1,sticky='nsew')
@@ -196,7 +247,22 @@ saveDirBtn.grid(row=0,column=0,sticky='ew')
 saveDirLabel.grid(row=0,column=1,sticky='nsew')
 sampleQtyLabel.grid(row=1,column=0,sticky='ew')
 sampleQtyEntry.grid(row=1,column=1,sticky='nsew')
-genBtn.grid(row=2,column=0,columnspan=2)
+partNameLab.grid(row=2,column=0,sticky='nsew')
+partNameEnt.grid(row=2,column=1,sticky='nsew')
+partNoLab.grid(row=3,column=0,sticky='nsew')
+partNoEnt.grid(row=3,column=1,sticky='nsew')
+dateLab.grid(row=4,column=0,sticky='nsew')
+dateEnt.grid(row=4,column=1,sticky='nsew')
+julianDateLabel.grid(row=5,column=0,sticky='nsew')
+julianDateEntry.grid(row=5,column=1,sticky='nsew')
+timeLabel.grid(row=6,column=0,sticky='nsew')
+timeEntry.grid(row=6,column=1,sticky='nsew')
+supplierLab.grid(row=7,column=0,sticky='nsew')
+supplierEnt.grid(row=7,column=1,sticky='nsew')
+supCodeLabel.grid(row=8,column=0,sticky='nsew')
+supCodeEntry.grid(row=8,column=1,sticky='nsew')
+genBtn.grid(row=9,column=0,columnspan=2)
+
 inputLabel.grid(row=0,column=0,sticky='nsew')
 outputLabel.grid(row=2,column=0,sticky='nsew')
 
