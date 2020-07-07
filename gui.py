@@ -1,7 +1,10 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
+from tkinter import messagebox
 import tkcalendar
+import openpyxl as xl
+import data
 
 # CONSTANTS
 WIDGET_WIDTH = 15
@@ -29,6 +32,34 @@ def chooseDir(label):
     dirName = filedialog.askdirectory(title="Choose Directory")
     label.insert(0,dirName)
     return
+
+def processCMM(dir1, dir2, dir3, numSamples, outDir):
+    if dir1 == '' and dir2 == '' and dir3 == '':
+        tk.messagebox.showerror(title='Error',message='No input files chosen!')
+        return
+    if outDir == '':
+        messagebox.showerror(title='Error',message='No output directory chosen!')
+        return
+    wb1 = xl.load_workbook(dir1)
+    ws1 = wb1.active
+    Sample1 = data.Part()
+    rowlist = []
+    for row in ws1.iter_rows(1,ws1.max_row):
+        for cell in row:
+            if cell.value == 'Name':
+                rowlist.append(cell.row)
+    for row in rowlist:
+        cell = ws1.cell(row+1,1)
+        while cell.value is not None:
+            Sample1.addData(cell.value,
+                            cell.offset(0,1).value,
+                            cell.offset(0,2).value,
+                            cell.offset(0,3).value,
+                            cell.offset(0,4).value,
+                            cell.offset(0,5).value)
+            cell = cell.offset(row=1,column=0)
+    for i in Sample1.getData():
+        print(i.getLabel() + ' ' + i.getControl() + ' ' + str(i.getNom()) + ' ' + str(i.getMeas()) + ' ' + str(i.getTol()) + ' ' + str(i.getDev()))
 
 #============================================================
 # Load and Process Input Files
@@ -132,7 +163,7 @@ accountLabel.grid(row=2,column=1,sticky='ew')
 account.grid(row=3,column=1)
 
 ### Finalize "Add Entry" tab
-tabCtl.add(tabAdd, text="Add Entry")
+tabCtl.add(tabAdd, text="Record Defect")
 
 ### Add functionality to "Process CMM" tab
 inputLabel = tk.Label(tabEdit,text="Input Files",relief=tk.GROOVE,pady=5)
@@ -153,7 +184,7 @@ fileBtn3 = tk.Button(inputFrame,text="Choose File...",command=lambda: chooseFile
 saveDirBtn = tk.Button(outputFrame,text="Choose Directory...",command=lambda: chooseDir(saveDirLabel))
 sampleQtyLabel = tk.Label(outputFrame,text="Sample Quantity",relief=tk.GROOVE,pady=5)
 sampleQtyEntry = tk.Spinbox(outputFrame,from_=0,to=100)
-genBtn = tk.Button(outputFrame,text="Generate Samples",padx=10,pady=5)
+genBtn = tk.Button(outputFrame,text="Generate Samples",padx=10,pady=5,command=lambda: processCMM(fileLabel1.get(),fileLabel2.get(),fileLabel3.get(),sampleQtyEntry.get(),saveDirLabel.get()))
 
 fileLabel1.grid(row=0,column=1,sticky='nsew')
 fileLabel2.grid(row=1,column=1,sticky='nsew')
