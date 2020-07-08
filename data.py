@@ -46,15 +46,27 @@ class DataPoint:
 
     def getCSV(self):
         if self.__typ == "Hole":
-            return self.__label + ',' + self.__typ + ',' + str(self.__X["Nominal"]) + ',' + str(self.__X["Measured"]) + ',' + str(self.__X["Deviation"]) + ',' + str(self.__Y["Nominal"]) + ',' + str(self.__Y["Measured"]) + ',' + str(self.__Y["Deviation"]) + ',' + str(self.__Z["Nominal"]) + ',' + str(self.__Z["Measured"]) + ',' + str(self.__Z["Deviation"]) + ',' + str(self.__Diameter["Measured"]) + ',' + "N/A"
+            return self.__label + ',' + self.__typ + ',' + "{:.3f}".format(self.__X["Nominal"]) + ',' + "{:.3f}".format(self.__X["Measured"]) + ',' + "{:.3f}".format(self.__X["Deviation"]) + ',' + "{:.3f}".format(self.__Y["Nominal"]) + ',' + "{:.3f}".format(self.__Y["Measured"]) + ',' + "{:.3f}".format(self.__Y["Deviation"]) + ',' + "{:.3f}".format(self.__Z["Nominal"]) + ',' + "{:.3f}".format(self.__Z["Measured"]) + ',' + "{:.3f}".format(self.__Z["Deviation"]) + ',' + "{:.3f}".format(self.__Diameter["Measured"]) + ',' + "N/A" + '\n'
         elif self.__typ == "Slot":
-            return self.__label + ',' + self.__typ + ',' + str(self.__X["Nominal"]) + ',' + str(self.__X["Measured"]) + ',' + str(self.__X["Deviation"]) + ',' + str(self.__Y["Nominal"]) + ',' + str(self.__Y["Measured"]) + ',' + str(self.__Y["Deviation"]) + ',' + str(self.__Z["Nominal"]) + ',' + str(self.__Z["Measured"]) + ',' + str(self.__Z["Deviation"]) + ',' + str(self.__Length["Measured"]) + ',' + str(self.__Width["Measured"])
+            return self.__label + ',' + self.__typ + ',' + "{:.3f}".format(self.__X["Nominal"]) + ',' + "{:.3f}".format(self.__X["Measured"]) + ',' + "{:.3f}".format(self.__X["Deviation"]) + ',' + "{:.3f}".format(self.__Y["Nominal"]) + ',' + "{:.3f}".format(self.__Y["Measured"]) + ',' + "{:.3f}".format(self.__Y["Deviation"]) + ',' + "{:.3f}".format(self.__Z["Nominal"]) + ',' + "{:.3f}".format(self.__Z["Measured"]) + ',' + "{:.3f}".format(self.__Z["Deviation"]) + ',' + "{:.3f}".format(self.__Length["Measured"]) + ',' + "{:.3f}".format(self.__Width["Measured"]) + '\n'
         elif self.__typ == "Edge":
-            return self.__label + ',' + self.__typ + ',' + str(self.__X["Nominal"]) + ',' + str(self.__X["Measured"]) + ',' + str(self.__X["Deviation"]) + ',' + str(self.__Y["Nominal"]) + ',' + str(self.__Y["Measured"]) + ',' + str(self.__Y["Deviation"]) + ',' + str(self.__Z["Nominal"]) + ',' + str(self.__Z["Measured"]) + ',' + str(self.__Z["Deviation"]) + ',' + "N/A" + ',' + "N/A"
+            return self.__label + ',' + self.__typ + ',' + "{:.3f}".format(self.__X["Nominal"]) + ',' + "{:.3f}".format(self.__X["Measured"]) + ',' + "{:.3f}".format(self.__X["Deviation"]) + ',' + "{:.3f}".format(self.__Y["Nominal"]) + ',' + "{:.3f}".format(self.__Y["Measured"]) + ',' + "{:.3f}".format(self.__Y["Deviation"]) + ',' + "{:.3f}".format(self.__Z["Nominal"]) + ',' + "{:.3f}".format(self.__Z["Measured"]) + ',' + "{:.3f}".format(self.__Z["Deviation"]) + ',' + "N/A" + ',' + "N/A" + '\n'
         elif self.__typ == "Surface":
-            return self.__label + ',' + self.__typ + ',' + str(self.__X["Nominal"]) + ',' + str(self.__X["Measured"]) + ',' + str(self.__X["Deviation"]) + ',' + str(self.__Y["Nominal"]) + ',' + str(self.__Y["Measured"]) + ',' + str(self.__Y["Deviation"]) + ',' + str(self.__Z["Nominal"]) + ',' + str(self.__Z["Measured"]) + ',' + str(self.__Z["Deviation"]) + ',' + "N/A" + ',' + "N/A"
+            return self.__label + ',' + self.__typ + ',' + "{:.3f}".format(self.__X["Nominal"]) + ',' + "{:.3f}".format(self.__X["Measured"]) + ',' + "{:.3f}".format(self.__X["Deviation"]) + ',' + "{:.3f}".format(self.__Y["Nominal"]) + ',' + "{:.3f}".format(self.__Y["Measured"]) + ',' + "{:.3f}".format(self.__Y["Deviation"]) + ',' + "{:.3f}".format(self.__Z["Nominal"]) + ',' + "{:.3f}".format(self.__Z["Measured"]) + ',' + "{:.3f}".format(self.__Z["Deviation"]) + ',' + "N/A" + ',' + "N/A" + '\n'
         else:
             return "Invalid Type"
+
+    def getComparisonPoints(self):
+        if self.__typ == "Hole":
+            points = list(self.__Diameter["Measured"],self.__X["Measured"],self.__Y["Measured"],self.__Z["Measured"])
+        elif self.__typ == "Slot":
+            points = list(self.__Length["Measured"],self.__Width["Measured"],self.__X["Measured"],self.__Y["Measured"],self.__Z["Measured"])
+        elif self.__typ == "Edge":
+            points = list(self.__X["Measured"],self.__Y["Measured"],self.__Z["Measured"])
+        elif self.__typ == "Surface":
+            points = list(self.__X["Measured"],self.__Y["Measured"],self.__Z["Measured"])
+
+        return points
 
 class Part:
     def __init__(self):
@@ -108,4 +120,10 @@ class Part:
         for point in self.datapoints:
             matrix.append(point.getCSV())
         return matrix
+
+    def getComparisonPoints(self):
+        points = list()
+        for point in self.datapoints:
+            points.append(point.getComparisonPoints())
+        return points
 

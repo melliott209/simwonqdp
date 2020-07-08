@@ -29,6 +29,7 @@ def readList(iniFile):
 def chooseFile(label):
     fileName = filedialog.askopenfilename(title="Select File")
     label.insert(0,fileName)
+    label.xview(tk.END)
     return
 
 # Chooses a directory and returns it to the button that asked for it
@@ -66,30 +67,70 @@ def loadDataPoint(direct, samples):
                                                 cell.offset(0,1).value,
                                                 cell.offset(0,2).value,
                                                 cell.offset(0,3).value,
-                                                cell.offset(0,4).value,
+                                                cell.offset(0,4).value[1:],
                                                 cell.offset(0,5).value)
                 cell = cell.offset(row=1,column=0)
 
 # Loads data from directories given using loadDataPoint()
-def loadData(dir1, dir2, dir3, samples):
-    loadDataPoint(dir1, samples)
-    loadDataPoint(dir2, samples)
-    loadDataPoint(dir3, samples)
+def loadData(dirList, samples):
+    for directory in dirList:
+        loadDataPoint(directory, samples)
+
+def writeCSV(header,sample,directory,outfileName):
+    with open(directory + '\\' + outfileName + '.csv', 'w') as outFile:
+        outFile.write(header)
+        for point in sample.getCSV():
+            outFile.write(point)
+
+def getFileHeader(partname, partno, date, julian, timecode, supplier, supCode, sampleNo):
+    h = int(timecode[:2])
+    m = int(timecode[2:])
+    timeString = datetime.time(hour=h,minute=m).strftime("%I:%M:%S %p")
+    returnString = 'Part Number,Part Name,Sample Number\n' + partno + ',' + partname + ',' + sampleNo + '\n' + 'Time,Date\n' + timeString + ',' + date + '\n' + 'Supplier Code,Supplier Name\n' + supCode + ',' + supplier + '\n\n' + 'Feature Label,Feature Type,Nominal X,Actual X,Deviation X,Nominal Y,Actual Y,Deviation Y,Nominal Z,Actual Z,Deviation Z,Diameter/Length,Width\n'
+    return returnString
+
+def generateSample(sampleList):
+    # TODO: Generate random samples
+    partList = list()
+    for sample in sampleList:
+        partList.append(sample.getComparisonPoints())
+
+    # TODO: iterate list of parts, gather min/max values
+    # TODO: create new part
+    # TODO: genearate random values for all data points
+    # TODO: update new part with random values
+    # TODO: return new part
 
 # Main command for Generate Samples button on GUI
-def processCMM(dir1, dir2, dir3, numSamples, outDir):
-    if dir1 == '' and dir2 == '' and dir3 == '':
-        tk.messagebox.showerror(title='Error',message='No input files chosen!')
-        return
+def processCMM(dirList, numSamples, partname, partno, date, julian, timecode, supplier, supcode, outDir):
+
+    # Check for errors in the entry fields
+    for directory in dirList:
+        if directory == '':
+            tk.messagebox.showerror(title='Error',message='No input files chosen!')
+            return
     if outDir == '':
         messagebox.showerror(title='Error',message='No output directory chosen!')
         return
 
-    Samples = list()
-    loadData(dir1,dir2,dir3,Samples)
+    # TODO: Add more errors for missing entries
 
-    for sample in Samples:
-        print(sample.getCSV())
+    # Create List to hold part "samples" and load it from selected directories
+    Samples = list()
+    loadData(dirList,Samples)
+
+    # Counter for number of samples generated; initialize to 0
+    count = 0
+
+    while count < numSamples:
+        if count < len(dirList):
+            if dirList[count] != '':
+                sampleNo = count+1 + '-' + julian
+                outFileName = partname + '_' + 'SampleID_' + sampleNo
+                writeCSV(getFileHeader(partname,partno,date,julian,timecode,supplier,supcode,sampleNo),Samples[0],outDir,outFileName)
+                count += 1
+        # TODO: Generate random samples for the rest
+        # TODO: write new output file for each generated sample
 
 #============================================================
 # Load and Process Input Files
@@ -222,20 +263,20 @@ sampleQtyEntry = tk.Spinbox(outputFrame,from_=0,to=100)
 partNameLab = tk.Label(outputFrame,text="Part Name",relief=tk.GROOVE,pady=5)
 partNameEnt = ttk.Combobox(outputFrame,values=parts,state="readonly")
 partNoLab = tk.Label(outputFrame,text="Part Number",relief=tk.GROOVE,pady=5)
-partNoEnt = tk.Label(outputFrame,text="--",relief=tk.GROOVE)
+partNoEnt = tk.Label(outputFrame,text="--",relief=tk.GROOVE,anchor='w')
 dateLab = tk.Label(outputFrame,text="Date",relief=tk.GROOVE,pady=5)
 dateEnt = tkcalendar.DateEntry(outputFrame,locale='en_US')
 partNameEnt.bind("<<ComboboxSelected>>",lambda event:partNameCallback(parts,partnos,partNameEnt.get(),partNoEnt))
 julianDateLabel = tk.Label(outputFrame,text="Julian Date Code",relief=tk.GROOVE,pady=5)
-julianDateEntry = tk.Label(outputFrame,text="--",relief=tk.GROOVE,pady=5)
+julianDateEntry = tk.Label(outputFrame,text="--",relief=tk.GROOVE,pady=5,anchor='w')
 dateEnt.bind("<<DateEntrySelected>>",lambda event:dateCallback(julianDateEntry,dateEnt.get_date()))
 timeLabel = tk.Label(outputFrame,text="Time (e.g. 1430 => 2:30 PM)",relief=tk.GROOVE,pady=5)
 timeEntry = tk.Entry(outputFrame,relief=tk.GROOVE)
 supplierLab = tk.Label(outputFrame,text="Supplier",relief=tk.GROOVE,pady=5)
-supplierEnt = tk.Label(outputFrame,text="MS Auto",relief=tk.GROOVE,pady=5)
+supplierEnt = tk.Label(outputFrame,text="MS Auto",relief=tk.GROOVE,pady=5,anchor='w')
 supCodeLabel = tk.Label(outputFrame,text="Supplier Code",relief=tk.GROOVE,pady=5)
-supCodeEntry = tk.Label(outputFrame,text="131307",relief=tk.GROOVE,pady=5)
-genBtn = tk.Button(outputFrame,text="Generate Samples",padx=10,pady=5,command=lambda: processCMM(fileLabel1.get(),fileLabel2.get(),fileLabel3.get(),sampleQtyEntry.get(),saveDirLabel.get()))
+supCodeEntry = tk.Label(outputFrame,text="131307",relief=tk.GROOVE,pady=5,anchor='w')
+genBtn = tk.Button(outputFrame,text="Generate Samples",padx=10,pady=5,command=lambda: processCMM(list(fileLabel1.get(),fileLabel2.get(),fileLabel3.get()),sampleQtyEntry.get(),partNameEnt.get(),partNoEnt.cget("text"),dateEnt.get(),julianDateEntry.cget("text"),timeEntry.get(),supplierEnt.cget("text"),supCodeEntry.cget("text"),saveDirLabel.get()))
 
 fileLabel1.grid(row=0,column=1,sticky='nsew')
 fileLabel2.grid(row=1,column=1,sticky='nsew')
