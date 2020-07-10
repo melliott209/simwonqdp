@@ -15,6 +15,8 @@ import data
 WIDGET_WIDTH = 15
 FILE_LABEL_DEFAULT = "None Chosen"
 DEFAULT_PADDING = 5
+OUT_TOL_MIN = 0.10
+OUT_TOL_MAX = 0.40
 
 #============================================================
 # Functions
@@ -170,6 +172,81 @@ def generateSample(sampleList):
 
     return newPart
 
+def adjustValues(sample):
+    for datapoint in sample.getData():
+        nominal = float(datapoint.getX()["Nominal"])
+        value = float(datapoint.getX()["Measured"])
+        tolerance = float(datapoint.getX()["Tolerance"])
+        if value-nominal > tolerance + (tolerance * OUT_TOL_MAX):
+            newValue = round(nominal + (tolerance + (tolerance * random.uniform(OUT_TOL_MIN,OUT_TOL_MAX))), 3)
+            datapoint.setX("Measured",newValue)
+            datapoint.setX("Deviation",newValue - nominal)
+        elif value-nominal < -tolerance - (tolerance * OUT_TOL_MAX):
+            newValue = round(nominal - (tolerance + (tolerance * random.uniform(OUT_TOL_MIN,OUT_TOL_MAX))), 3)
+            datapoint.setX("Measured",newValue)
+            datapoint.setX("Deviation",newValue - nominal)
+
+        nominal = float(datapoint.getY()["Nominal"])
+        value = float(datapoint.getY()["Measured"])
+        tolerance = float(datapoint.getY()["Tolerance"])
+        if value-nominal > tolerance + (tolerance * OUT_TOL_MAX):
+            newValue = round(nominal + (tolerance + (tolerance * random.uniform(OUT_TOL_MIN,OUT_TOL_MAX))), 3)
+            datapoint.setY("Measured",newValue)
+            datapoint.setY("Deviation",newValue - nominal)
+        elif value-nominal < -tolerance - (tolerance * OUT_TOL_MAX):
+            newValue = round(nominal - (tolerance + (tolerance * random.uniform(OUT_TOL_MIN,OUT_TOL_MAX))), 3)
+            datapoint.setY("Measured",newValue)
+            datapoint.setY("Deviation",newValue - nominal)
+
+        nominal = float(datapoint.getZ()["Nominal"])
+        value = float(datapoint.getZ()["Measured"])
+        tolerance = float(datapoint.getZ()["Tolerance"])
+        if value-nominal > tolerance + (tolerance * OUT_TOL_MAX):
+            newValue = round(nominal + (tolerance + (tolerance * random.uniform(OUT_TOL_MIN,OUT_TOL_MAX))), 3)
+            datapoint.setZ("Measured",newValue)
+            datapoint.setZ("Deviation",newValue - nominal)
+        elif value-nominal < -tolerance - (tolerance * OUT_TOL_MAX):
+            newValue = round(nominal - (tolerance + (tolerance * random.uniform(OUT_TOL_MIN,OUT_TOL_MAX))), 3)
+            datapoint.setZ("Measured",newValue)
+            datapoint.setZ("Deviation",newValue - nominal)
+
+        if datapoint.getType() == "Hole":
+            nominal = float(datapoint.getDia()["Nominal"])
+            value = float(datapoint.getDia()["Measured"])
+            tolerance = float(datapoint.getDia()["Tolerance"])
+            if value-nominal > tolerance + (tolerance * OUT_TOL_MAX):
+                newValue = round(nominal + (tolerance + (tolerance * random.uniform(OUT_TOL_MIN,OUT_TOL_MAX))), 3)
+                datapoint.setDia("Measured",newValue)
+                datapoint.setDia("Deviation",newValue - nominal)
+            elif value-nominal < -tolerance - (tolerance * OUT_TOL_MAX):
+                newValue = round(nominal - (tolerance + (tolerance * random.uniform(OUT_TOL_MIN,OUT_TOL_MAX))), 3)
+                datapoint.setDia("Measured",newValue)
+                datapoint.setDia("Deviation",newValue - nominal)
+
+        elif datapoint.getType() == "Slot":
+            nominal = float(datapoint.getLen()["Nominal"])
+            value = float(datapoint.getLen()["Measured"])
+            tolerance = float(datapoint.getLen()["Tolerance"])
+            if value-nominal > tolerance + (tolerance * OUT_TOL_MAX):
+                newValue = round(nominal + (tolerance + (tolerance * random.uniform(OUT_TOL_MIN,OUT_TOL_MAX))), 3)
+                datapoint.setLen("Measured",newValue)
+                datapoint.setLen("Deviation",newValue - nominal)
+            elif value-nominal < -tolerance - (tolerance * OUT_TOL_MAX):
+                newValue = round(nominal - (tolerance + (tolerance * random.uniform(OUT_TOL_MIN,OUT_TOL_MAX))), 3)
+                datapoint.setLen("Measured",newValue)
+                datapoint.setLen("Deviation",newValue - nominal)
+
+            nominal = float(datapoint.getWid()["Nominal"])
+            value = float(datapoint.getWid()["Measured"])
+            tolerance = float(datapoint.getWid()["Tolerance"])
+            if value-nominal > tolerance + (tolerance * OUT_TOL_MAX):
+                newValue = round(nominal + (tolerance + (tolerance * random.uniform(OUT_TOL_MIN,OUT_TOL_MAX))), 3)
+                datapoint.setWid("Measured",newValue)
+                datapoint.setWid("Deviation",newValue - nominal)
+            elif value-nominal < -tolerance - (tolerance * OUT_TOL_MAX):
+                newValue = round(nominal - (tolerance + (tolerance * random.uniform(OUT_TOL_MIN,OUT_TOL_MAX))), 3)
+                datapoint.setWid("Measured",newValue)
+                datapoint.setWid("Deviation",newValue - nominal)
 
 # Main command for Generate Samples button on GUI
 def processCMM(dirList, numSamples, partname, partno, date, julian, timecode, supplier, supcode, outDir):
@@ -200,10 +277,12 @@ def processCMM(dirList, numSamples, partname, partno, date, julian, timecode, su
             if dirList[count] != '':
                 sampleNo = str(count+1) + '-' + julian
                 outFileName = partno + '_SampleID_' + sampleNo
+                adjustValues(Samples[count])
                 writeCSV(getFileHeader(partname,partno,date,julian,timecode,supplier,supcode,sampleNo),Samples[count],outDir,outFileName)
                 count += 1
             else:
                 part = generateSample(Samples)
+                adjustValues(part)
                 sampleNo = str(count+1) + '-' + julian
                 outFileName = partno + '_SampleID_' + sampleNo
                 writeCSV(getFileHeader(partname,partno,date,julian,timecode,supplier,supcode,sampleNo),part,outDir,outFileName)
