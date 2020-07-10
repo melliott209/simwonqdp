@@ -2,6 +2,7 @@ class DataPoint:
     def __init__(self,label,typ):
         self.__label = label
         self.__typ = typ
+        self.__control = ''
         self.__Diameter = dict.fromkeys(["Nominal","Measured","Tolerance","Deviation"])
         self.__Length = dict.fromkeys(["Nominal","Measured","Tolerance","Deviation"])
         self.__Width = dict.fromkeys(["Nominal","Measured","Tolerance","Deviation"])
@@ -10,6 +11,7 @@ class DataPoint:
         self.__Z = dict.fromkeys(["Nominal","Measured","Tolerance","Deviation"])
 
     def update(self,control,key,value):
+        self.__control = control
         if control == "Diameter":
             self.__Diameter[key] = value
         elif control == "Length":
@@ -26,23 +28,47 @@ class DataPoint:
     def getLabel(self):
         return self.__label
 
+    def getType(self):
+        return self.__typ
+
+    def getControl(self):
+        return self.__control
+
     def getDia(self):
         return self.__Diameter
+
+    def setDia(self,key,value):
+        self.__Diameter[key] = value
 
     def getLen(self):
         return self.__Length
 
+    def setLen(self,key,value):
+        self.__Length[key] = value
+
     def getWid(self):
         return self.__Width
+
+    def setWid(self,key,value):
+        self.__Width[key] = value
 
     def getX(self):
         return self.__X
 
+    def setX(self,key,value):
+        self.__X[key] = value
+
     def getY(self):
         return self.__Y
 
+    def setY(self,key,value):
+        self.__Y[key] = value
+
     def getZ(self):
         return self.__Z
+
+    def setZ(self,key,value):
+        self.__Z[key] = value
 
     def getCSV(self):
         if self.__typ == "Hole":
@@ -55,18 +81,6 @@ class DataPoint:
             return self.__label + ',' + self.__typ + ',' + "{:.3f}".format(self.__X["Nominal"]) + ',' + "{:.3f}".format(self.__X["Measured"]) + ',' + "{:.3f}".format(self.__X["Deviation"]) + ',' + "{:.3f}".format(self.__Y["Nominal"]) + ',' + "{:.3f}".format(self.__Y["Measured"]) + ',' + "{:.3f}".format(self.__Y["Deviation"]) + ',' + "{:.3f}".format(self.__Z["Nominal"]) + ',' + "{:.3f}".format(self.__Z["Measured"]) + ',' + "{:.3f}".format(self.__Z["Deviation"]) + ',' + "N/A" + ',' + "N/A" + '\n'
         else:
             return "Invalid Type"
-
-    def getComparisonPoints(self):
-        if self.__typ == "Hole":
-            points = list(self.__Diameter["Measured"],self.__X["Measured"],self.__Y["Measured"],self.__Z["Measured"])
-        elif self.__typ == "Slot":
-            points = list(self.__Length["Measured"],self.__Width["Measured"],self.__X["Measured"],self.__Y["Measured"],self.__Z["Measured"])
-        elif self.__typ == "Edge":
-            points = list(self.__X["Measured"],self.__Y["Measured"],self.__Z["Measured"])
-        elif self.__typ == "Surface":
-            points = list(self.__X["Measured"],self.__Y["Measured"],self.__Z["Measured"])
-
-        return points
 
 class Part:
     def __init__(self):
@@ -121,9 +135,10 @@ class Part:
             matrix.append(point.getCSV())
         return matrix
 
-    def getComparisonPoints(self):
-        points = list()
+    def getPointByLabel(self,label):
         for point in self.datapoints:
-            points.append(point.getComparisonPoints())
-        return points
+            if point.getLabel() == label:
+                return point
 
+    def copyFrom(self,oldPart):
+        self.datapoints = oldPart.getData()

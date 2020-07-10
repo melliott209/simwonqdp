@@ -5,6 +5,7 @@ from tkinter import messagebox
 import tkcalendar
 import openpyxl as xl
 import datetime
+import random
 import data
 
 #============================================================
@@ -39,7 +40,6 @@ def chooseDir(label):
     return
 
 def partNameCallback(partsList,partNoList,selected,label):
-    print("event generated!")
     if selected == '':
         return
     label.config(text=partNoList[partsList.index(selected)])
@@ -85,30 +85,103 @@ def writeCSV(header,sample,directory,outfileName):
 def getFileHeader(partname, partno, date, julian, timecode, supplier, supCode, sampleNo):
     h = int(timecode[:2])
     m = int(timecode[2:])
-    timeString = datetime.time(hour=h,minute=m).strftime("%I:%M:%S %p")
+    time = datetime.datetime(100,1,1,h,m)
+    timeoffset = (int(sampleNo[:1])-1) * 15
+    time = time + datetime.timedelta(minutes=timeoffset)
+    timeString = time.strftime("%I:%M:%S %p")
     returnString = 'Part Number,Part Name,Sample Number\n' + partno + ',' + partname + ',' + sampleNo + '\n' + 'Time,Date\n' + timeString + ',' + date + '\n' + 'Supplier Code,Supplier Name\n' + supCode + ',' + supplier + '\n\n' + 'Feature Label,Feature Type,Nominal X,Actual X,Deviation X,Nominal Y,Actual Y,Deviation Y,Nominal Z,Actual Z,Deviation Z,Diameter/Length,Width\n'
     return returnString
 
 def generateSample(sampleList):
-    # TODO: Generate random samples
-    partList = list()
-    for sample in sampleList:
-        partList.append(sample.getComparisonPoints())
+    newPart = data.Part()
+    newPart.copyFrom(sampleList[0])
+    
+    firstSample = sampleList[0].getData()
+    for datapoint in firstSample:
+        index = firstSample.index(datapoint)
 
-    # TODO: iterate list of parts, gather min/max values
-    # TODO: create new part
-    # TODO: genearate random values for all data points
-    # TODO: update new part with random values
-    # TODO: return new part
+        minimum = datapoint.getX()["Measured"]
+        maximum = datapoint.getX()["Measured"]
+        for sample in sampleList:
+            value = sample.getData()[index].getX()["Measured"]
+            if value < minimum:
+                minumum = value
+            if value > maximum:
+                maximum = value
+        randValue = round(random.uniform(minimum,maximum),3)
+        newPart.getPointByLabel(datapoint.getLabel()).setX("Measured",randValue)
+
+        minimum = datapoint.getY()["Measured"]
+        maximum = datapoint.getY()["Measured"]
+        for sample in sampleList:
+            value = sample.getData()[index].getY()["Measured"]
+            if value < minimum:
+                minumum = value
+            if value > maximum:
+                maximum = value
+        randValue = round(random.uniform(minimum,maximum),3)
+        newPart.getPointByLabel(datapoint.getLabel()).setY("Measured",randValue)
+
+        minimum = datapoint.getZ()["Measured"]
+        maximum = datapoint.getZ()["Measured"]
+        for sample in sampleList:
+            value = sample.getData()[index].getZ()["Measured"]
+            if value < minimum:
+                minumum = value
+            if value > maximum:
+                maximum = value
+        randValue = round(random.uniform(minimum,maximum),3)
+        newPart.getPointByLabel(datapoint.getLabel()).setZ("Measured",randValue)
+        
+        if datapoint.getType == "Hole":
+            minimum = datapoint.getDia()["Measured"]
+            maximum = datapoint.getDia()["Measured"]
+            for sample in sampleList:
+                value = sample.getData()[index].getDia()["Measured"]
+                if value < minimum:
+                    minimum = value
+                if value > maximum:
+                    maximum = value
+            randValue = round(random.uniform(minimum,maximum),3)
+            newPart.getPointByLabel(datapoint.getLabel()).setDia("Measured",randValue)
+
+        elif datapoint.getType == "Slot":
+            minimum = datapoint.getLen()["Measured"]
+            maximum = datapoint.getLen()["Measured"]
+            for sample in sampleList:
+                value = sample.getData()[index].getLen()["Measured"]
+                if value < minimum:
+                    minimum = value
+                if value > maximum:
+                    maximum = value
+            randValue = round(random.uniform(minimum,maximum),3)
+            newPart.getPointByLabel(datapoint.getLabel()).setLen("Measured",randValue)
+
+            minimum = datapoint.getWid()["Measured"]
+            maximum = datapoint.getWid()["Measured"]
+            for sample in sampleList:
+                value = sample.getData()[index].getWid()["Measured"]
+                if value < minimum:
+                    minimum = value
+                if value > maximum:
+                    maximum = value
+            randValue = round(random.uniform(minimum,maximum),3)
+            newPart.getPointByLabel(datapoint.getLabel()).setWid("Measured",randValue)
+
+    return newPart
+
 
 # Main command for Generate Samples button on GUI
 def processCMM(dirList, numSamples, partname, partno, date, julian, timecode, supplier, supcode, outDir):
 
     # Check for errors in the entry fields
+    flag = False
     for directory in dirList:
-        if directory == '':
-            tk.messagebox.showerror(title='Error',message='No input files chosen!')
-            return
+        if directory != '':
+            flag = True
+    if flag == False:
+        tk.messagebox.showerror(title='Error',message='No input files chosen!')
+        return
     if outDir == '':
         messagebox.showerror(title='Error',message='No output directory chosen!')
         return
@@ -122,15 +195,19 @@ def processCMM(dirList, numSamples, partname, partno, date, julian, timecode, su
     # Counter for number of samples generated; initialize to 0
     count = 0
 
-    while count < numSamples:
+    while count < int(numSamples):
         if count < len(dirList):
             if dirList[count] != '':
-                sampleNo = count+1 + '-' + julian
-                outFileName = partname + '_' + 'SampleID_' + sampleNo
-                writeCSV(getFileHeader(partname,partno,date,julian,timecode,supplier,supcode,sampleNo),Samples[0],outDir,outFileName)
+                sampleNo = str(count+1) + '-' + julian
+                outFileName = partno + '_SampleID_' + sampleNo
+                writeCSV(getFileHeader(partname,partno,date,julian,timecode,supplier,supcode,sampleNo),Samples[count],outDir,outFileName)
                 count += 1
-        # TODO: Generate random samples for the rest
-        # TODO: write new output file for each generated sample
+            else:
+                part = generateSample(Samples)
+                sampleNo = str(count+1) + '-' + julian
+                outFileName = partno + '_SampleID_' + sampleNo
+                writeCSV(getFileHeader(partname,partno,date,julian,timecode,supplier,supcode,sampleNo),part,outDir,outFileName)
+                count += 1
 
 #============================================================
 # Load and Process Input Files
@@ -276,7 +353,7 @@ supplierLab = tk.Label(outputFrame,text="Supplier",relief=tk.GROOVE,pady=5)
 supplierEnt = tk.Label(outputFrame,text="MS Auto",relief=tk.GROOVE,pady=5,anchor='w')
 supCodeLabel = tk.Label(outputFrame,text="Supplier Code",relief=tk.GROOVE,pady=5)
 supCodeEntry = tk.Label(outputFrame,text="131307",relief=tk.GROOVE,pady=5,anchor='w')
-genBtn = tk.Button(outputFrame,text="Generate Samples",padx=10,pady=5,command=lambda: processCMM(list(fileLabel1.get(),fileLabel2.get(),fileLabel3.get()),sampleQtyEntry.get(),partNameEnt.get(),partNoEnt.cget("text"),dateEnt.get(),julianDateEntry.cget("text"),timeEntry.get(),supplierEnt.cget("text"),supCodeEntry.cget("text"),saveDirLabel.get()))
+genBtn = tk.Button(outputFrame,text="Generate Samples",padx=10,pady=5,command=lambda: processCMM(list([fileLabel1.get(),fileLabel2.get(),fileLabel3.get()]),sampleQtyEntry.get(),partNameEnt.get(),partNoEnt.cget("text"),dateEnt.get(),julianDateEntry.cget("text"),timeEntry.get(),supplierEnt.cget("text"),supCodeEntry.cget("text"),saveDirLabel.get()))
 
 fileLabel1.grid(row=0,column=1,sticky='nsew')
 fileLabel2.grid(row=1,column=1,sticky='nsew')
