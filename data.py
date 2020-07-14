@@ -118,7 +118,10 @@ class Part:
             self.datapoints[index].update(realControl,"Deviation",dev)
         else:
             if label[:1] == "H":
-                typ = "Hole"
+                if label == "H3725B00002" or label == "H3725B00003":
+                    typ = "Slot"
+                else:
+                    typ = "Hole"
             elif label[:1] == "M" or label[:1] == "L":
                 typ = "Slot"
             elif label[:1] == "E":
