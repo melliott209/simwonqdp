@@ -112,6 +112,8 @@ def generateSample(sampleList):
                 maximum = value
         randValue = round(random.uniform(minimum,maximum),3)
         newPart.getPointByLabel(datapoint.getLabel()).setX("Measured",randValue)
+        newDevValue = randValue - newPart.getPointByLabel(datapoint.getLabel()).getX()["Nominal"]
+        newPart.getPointByLabel(datapoint.getLabel()).setX("Deviation",newDevValue)
 
         minimum = datapoint.getY()["Measured"]
         maximum = datapoint.getY()["Measured"]
@@ -123,6 +125,8 @@ def generateSample(sampleList):
                 maximum = value
         randValue = round(random.uniform(minimum,maximum),3)
         newPart.getPointByLabel(datapoint.getLabel()).setY("Measured",randValue)
+        newDevValue = randValue - newPart.getPointByLabel(datapoint.getLabel()).getY()["Nominal"]
+        newPart.getPointByLabel(datapoint.getLabel()).setY("Deviation",newDevValue)
 
         minimum = datapoint.getZ()["Measured"]
         maximum = datapoint.getZ()["Measured"]
@@ -134,6 +138,8 @@ def generateSample(sampleList):
                 maximum = value
         randValue = round(random.uniform(minimum,maximum),3)
         newPart.getPointByLabel(datapoint.getLabel()).setZ("Measured",randValue)
+        newDevValue = randValue - newPart.getPointByLabel(datapoint.getLabel()).getZ()["Nominal"]
+        newPart.getPointByLabel(datapoint.getLabel()).setZ("Deviation",newDevValue)
         
         if datapoint.getType == "Hole":
             minimum = datapoint.getDia()["Measured"]
@@ -146,6 +152,8 @@ def generateSample(sampleList):
                     maximum = value
             randValue = round(random.uniform(minimum,maximum),3)
             newPart.getPointByLabel(datapoint.getLabel()).setDia("Measured",randValue)
+            newDevValue = randValue - newPart.getPointByLabel(datapoint.getLabel()).getDia()["Nominal"]
+            newPart.getPointByLabel(datapoint.getLabel()).setDia("Deviation",newDevValue)
 
         elif datapoint.getType == "Slot":
             minimum = datapoint.getLen()["Measured"]
@@ -158,6 +166,8 @@ def generateSample(sampleList):
                     maximum = value
             randValue = round(random.uniform(minimum,maximum),3)
             newPart.getPointByLabel(datapoint.getLabel()).setLen("Measured",randValue)
+            newDevValue = randValue - newPart.getPointByLabel(datapoint.getLabel()).getLen()["Nominal"]
+            newPart.getPointByLabel(datapoint.getLabel()).setLen("Deviation",newDevValue)
 
             minimum = datapoint.getWid()["Measured"]
             maximum = datapoint.getWid()["Measured"]
@@ -169,6 +179,8 @@ def generateSample(sampleList):
                     maximum = value
             randValue = round(random.uniform(minimum,maximum),3)
             newPart.getPointByLabel(datapoint.getLabel()).setWid("Measured",randValue)
+            newDevValue = randValue - newPart.getPointByLabel(datapoint.getLabel()).getWid()["Nominal"]
+            newPart.getPointByLabel(datapoint.getLabel()).setWid("Deviation",newDevValue)
 
     return newPart
 
@@ -270,8 +282,15 @@ def processCMM(dirList, numSamples, partname, partno, date, julian, timecode, su
     if outDir == '':
         messagebox.showerror(title='Error',message='No output directory chosen!')
         return
-
-    # TODO: Add more errors for missing entries
+    if partname == '':
+        messagebox.showerror(title='Error',message='No part selected!')
+        return
+    if julian == '':
+        messagebox.showerror(title='Error',message='Julian date not entered. Please select a date.')
+        return
+    if timecode == '':
+        messagebox.showerror(title='Error',message='Time not entered. Please enter the time in the format "HHMM"')
+        return
 
     # Create List to hold part "samples" and load it from selected directories
     Samples = list()
