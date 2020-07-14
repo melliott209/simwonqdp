@@ -211,6 +211,8 @@ def adjustValues(sample):
             datapoint.setZ("Deviation",newValue - nominal)
 
         if datapoint.getType() == "Hole":
+            if type(datapoint.getDia()["Measured"]) == str:
+                continue
             nominal = float(datapoint.getDia()["Nominal"])
             value = float(datapoint.getDia()["Measured"])
             tolerance = float(datapoint.getDia()["Tolerance"])
@@ -248,8 +250,14 @@ def adjustValues(sample):
                 datapoint.setWid("Measured",newValue)
                 datapoint.setWid("Deviation",newValue - nominal)
 
+def addHardware(sample):
+    for datapoint in sample.getData():
+        for label in hardwareParts:
+            if datapoint.getLabel() == label:
+                datapoint.setDia('Measured',hardware[hardwareParts.index(label)])
+
 # Main command for Generate Samples button on GUI
-def processCMM(dirList, numSamples, partname, partno, date, julian, timecode, supplier, supcode, outDir):
+def processCMM(dirList, numSamples, partname, partno, date, julian, timecode, supplier, supcode, outDir, allGen):
 
     # Check for errors in the entry fields
     flag = False
@@ -272,22 +280,34 @@ def processCMM(dirList, numSamples, partname, partno, date, julian, timecode, su
     # Counter for number of samples generated; initialize to 0
     count = 0
 
-    while count < int(numSamples):
-        if count < len(dirList):
-            if dirList[count] != '':
-                sampleNo = str(count+1) + '-' + julian
-                outFileName = partno + '_SampleID_' + sampleNo
-                adjustValues(Samples[count])
-                writeCSV(getFileHeader(partname,partno,date,julian,timecode,supplier,supcode,sampleNo),Samples[count],outDir,outFileName)
-                count += 1
-            else:
-                part = generateSample(Samples)
-                adjustValues(part)
-                sampleNo = str(count+1) + '-' + julian
-                outFileName = partno + '_SampleID_' + sampleNo
-                writeCSV(getFileHeader(partname,partno,date,julian,timecode,supplier,supcode,sampleNo),part,outDir,outFileName)
-                count += 1
-
+    if allGen == 0:
+        while count < int(numSamples):
+            if count < len(dirList):
+                if dirList[count] != '':
+                    sampleNo = str(count+1) + '-' + julian
+                    outFileName = partno + '_SampleID_' + sampleNo
+                    adjustValues(Samples[count])
+                    addHardware(Samples[count])
+                    writeCSV(getFileHeader(partname,partno,date,julian,timecode,supplier,supcode,sampleNo),Samples[count],outDir,outFileName)
+                    count += 1
+                else:
+                    part = generateSample(Samples)
+                    adjustValues(part)
+                    addHardware(part)
+                    sampleNo = str(count+1) + '-' + julian
+                    outFileName = partno + '_SampleID_' + sampleNo
+                    writeCSV(getFileHeader(partname,partno,date,julian,timecode,supplier,supcode,sampleNo),part,outDir,outFileName)
+                    count += 1
+    else:
+        while count < int(numSamples):
+            part = generateSample(Samples)
+            adjustValues(part)
+            addHardware(part)
+            sampleNo = str(count+1) + '-' + julian
+            outFileName = partno + '_SampleID_' + sampleNo
+            writeCSV(getFileHeader(partname,partno,date,julian,timecode,supplier,supcode,sampleNo),part,outDir,outFileName)
+            count += 1
+        
 #============================================================
 # Load and Process Input Files
 #============================================================
@@ -305,6 +325,8 @@ supplier = readList(ini_parts)
 process = readList(ini_parts)
 shift = readList(ini_parts)
 dept = readList(ini_parts)
+hardwareParts = readList(ini_parts)
+hardware = readList(ini_parts)
 ini_parts.close()
 
 #============================================================
@@ -432,7 +454,9 @@ supplierLab = tk.Label(outputFrame,text="Supplier",relief=tk.GROOVE,pady=5)
 supplierEnt = tk.Label(outputFrame,text="MS Auto",relief=tk.GROOVE,pady=5,anchor='w')
 supCodeLabel = tk.Label(outputFrame,text="Supplier Code",relief=tk.GROOVE,pady=5)
 supCodeEntry = tk.Label(outputFrame,text="131307",relief=tk.GROOVE,pady=5,anchor='w')
-genBtn = tk.Button(outputFrame,text="Generate Samples",padx=10,pady=5,command=lambda: processCMM(list([fileLabel1.get(),fileLabel2.get(),fileLabel3.get()]),sampleQtyEntry.get(),partNameEnt.get(),partNoEnt.cget("text"),dateEnt.get(),julianDateEntry.cget("text"),timeEntry.get(),supplierEnt.cget("text"),supCodeEntry.cget("text"),saveDirLabel.get()))
+allGen = tk.IntVar()
+allGenEntry = tk.Checkbutton(outputFrame,text="Generated Samples Only",variable=allGen)
+genBtn = tk.Button(outputFrame,text="Generate Samples",padx=10,pady=5,command=lambda: processCMM(list([fileLabel1.get(),fileLabel2.get(),fileLabel3.get()]),sampleQtyEntry.get(),partNameEnt.get(),partNoEnt.cget("text"),dateEnt.get(),julianDateEntry.cget("text"),timeEntry.get(),supplierEnt.cget("text"),supCodeEntry.cget("text"),saveDirLabel.get(),allGen))
 
 fileLabel1.grid(row=0,column=1,sticky='nsew')
 fileLabel2.grid(row=1,column=1,sticky='nsew')
@@ -459,6 +483,7 @@ supplierEnt.grid(row=7,column=1,sticky='nsew')
 supCodeLabel.grid(row=8,column=0,sticky='nsew')
 supCodeEntry.grid(row=8,column=1,sticky='nsew')
 genBtn.grid(row=9,column=0,columnspan=2)
+allGenEntry.grid(row=10,column=1,sticky='nsew')
 
 inputLabel.grid(row=0,column=0,sticky='nsew')
 outputLabel.grid(row=2,column=0,sticky='nsew')
