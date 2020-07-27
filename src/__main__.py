@@ -24,7 +24,7 @@ OUT_TOL_MAX = 0.40
 
 # Reads line from INI file and returns a list
 def readList(iniFile):
-    string = iniFile.readline()
+    string = iniFile.readline().rstrip()
     startIndex = string.find("=") + 1
     return string[startIndex:].split(",")
 
